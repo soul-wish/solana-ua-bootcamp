@@ -8,20 +8,17 @@ use solana_sdk::{
 use std::env;
 
 pub fn main() {
-    // Load private key from environment variable
     let private_key = env::var("PRIVATE_KEY").expect("Add private key to .env!");
     let secret_key = bs58::decode(&private_key)
         .into_vec()
         .expect("Invalid private key");
     let sender = Keypair::from_bytes(&secret_key).expect("Invalid keypair");
 
-    // Connect to devnet
     let rpc_url = "https://api.devnet.solana.com";
     let connection = RpcClient::new(rpc_url);
 
     println!("👀 checking balance of {}", sender.pubkey());
 
-    // Get initial balance
     let balance_in_lamports = connection
         .get_balance(&sender.pubkey())
         .expect("Failed to get balance");
@@ -33,20 +30,16 @@ pub fn main() {
         balance
     );
 
-    // Recipient public key
     let recipient = solana_sdk::pubkey!("GqdAk31gXguPcLpuzHBTWUzqx6vNfYJFbqT9ewWdwMtw");
 
-    // Create transaction
     let recent_blockhash = connection
         .get_latest_blockhash()
         .expect("Failed to get recent blockhash");
 
     let lamports = (0.1 * solana_sdk::native_token::LAMPORTS_PER_SOL as f64) as u64;
 
-    // Create the transfer instruction using system_instruction::transfer
     let transfer_instruction = system_instruction::transfer(&sender.pubkey(), &recipient, lamports);
 
-    // Create and sign the transaction
     let transaction = Transaction::new_signed_with_payer(
         &[transfer_instruction],
         Some(&sender.pubkey()),
@@ -54,7 +47,6 @@ pub fn main() {
         recent_blockhash,
     );
 
-    // Send and confirm the transaction
     let signature = connection.send_and_confirm_transaction(&transaction);
 
     println!(
@@ -62,7 +54,6 @@ pub fn main() {
         signature.unwrap()
     );
 
-    // Check final balance
     let final_balance_in_lamports = connection
         .get_balance(&sender.pubkey())
         .expect("Failed to get final balance");
