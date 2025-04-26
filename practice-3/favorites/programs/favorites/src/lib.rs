@@ -33,6 +33,19 @@ pub struct AddFavorites<'info> {
     pub system_program: Program<'info, System>,
 }
 
+#[derive(Accounts)]
+pub struct UpdateFavorites<'info> {
+    #[account(mut)]
+    pub user: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"favorites", user.key().as_ref()],
+        bump,
+    )]
+    pub favorites: Account<'info, Favorites>,
+}
+
 #[program]
 pub mod favorites {
     use super::*;
@@ -42,6 +55,13 @@ pub mod favorites {
         msg!("Greeting from: {}", ctx.program_id);
         msg!("User {}'s favorite number is {} and favorite color is {}", user_public_key, number, color);
         ctx.accounts.favorites.set_inner(Favorites { number, color });
+        Ok(())
+    }
+
+    pub fn update_favorites(ctx: Context<UpdateFavorites>, number: u64, color: String) -> Result<()> {
+        let favorites = &mut ctx.accounts.favorites;
+        favorites.number = number;
+        favorites.color = color;
         Ok(())
     }
 }
