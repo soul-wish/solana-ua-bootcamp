@@ -56,4 +56,43 @@ describe("favorites", () => {
     expect(dataFromPDA.number.toNumber()).toEqual(favoriteNumber.toNumber());
     expect(dataFromPDA.color).toEqual(favoriteColor);
   });
+
+  it("Updates existing favorites data on the blockchain", async () => {
+    const user = web3.Keypair.generate();
+    const program = anchor.workspace.Favorites as Program<Favorites>;
+
+    await airdropIfRequired(
+      anchor.getProvider().connection,
+      user.publicKey,
+      0.5 * web3.LAMPORTS_PER_SOL,
+      1 * web3.LAMPORTS_PER_SOL,
+    );
+
+    // First, add initial favorites
+    const initialNumber = new anchor.BN(7);
+    const initialColor = "Blue";
+    await program.methods
+      .setFavorites(initialNumber, initialColor)
+      .accounts({ user: user.publicKey })
+      .signers([user])
+      .rpc();
+
+    const [favoritesPDA, _bump] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("favorites"), user.publicKey.toBuffer()],
+      program.programId,
+    );
+
+    // Now update favorites
+    const updatedNumber = new anchor.BN(99);
+    const updatedColor = "Green";
+    await program.methods
+      .updateFavorites(updatedNumber, updatedColor)
+      .accounts({ user: user.publicKey })
+      .signers([user])
+      .rpc();
+
+    const dataFromPDA = await program.account.favorites.fetch(favoritesPDA);
+    expect(dataFromPDA.number.toNumber()).toEqual(updatedNumber.toNumber());
+    expect(dataFromPDA.color).toEqual(updatedColor);
+  });
 });
