@@ -50,27 +50,28 @@ const DUMMY_TOKENS: Record<string, TokenMetadata> = {
 
 async function fetchTokenMetadata(
   connection: Connection,
-  mintAddress: string
+  mintAddress: string,
 ): Promise<TokenMetadata> {
   try {
     try {
       const ownerAddress = await connection.getAccountInfo(
-        new PublicKey(mintAddress)
+        new PublicKey(mintAddress),
       );
 
       const mintData = await getMint(
         connection,
         new PublicKey(mintAddress),
         "confirmed",
-        ownerAddress?.owner
+        ownerAddress?.owner,
       );
 
-      let metadata: Partial<TokenMetadata> = {};
+      const metadata: Partial<TokenMetadata> = {};
 
       if (ownerAddress?.owner === TOKEN_2022_PROGRAM_ID) {
+        console.log("TOKEN_2022_PROGRAM_ID", ownerAddress);
         const token2022Metadata = await getTokenMetadata(
           connection,
-          new PublicKey(mintAddress)
+          new PublicKey(mintAddress),
         );
 
         if (token2022Metadata) {
@@ -86,9 +87,8 @@ async function fetchTokenMetadata(
           .pdas()
           .metadata({ mint: new PublicKey(mintAddress) });
 
-        const metadataAccountInfo = await connection.getAccountInfo(
-          metadataAccount
-        );
+        const metadataAccountInfo =
+          await connection.getAccountInfo(metadataAccount);
 
         if (metadataAccountInfo) {
           const token = await metaplex
@@ -116,7 +116,8 @@ async function fetchTokenMetadata(
       }
 
       if (!metadata.decimals) {
-        throw new Error("No metadata found");
+        metadata.decimals = 6;
+        //throw new Error('No metadata found');
       }
 
       return {
@@ -124,7 +125,7 @@ async function fetchTokenMetadata(
         symbol: metadata.symbol || "UNKNOWN",
         name: metadata.name || "Unknown Token",
         decimals: mintData.decimals,
-        icon: metadata?.icon || "👁",
+        icon: metadata?.icon || "🌠",
       };
     } catch (e) {
       console.log("No Metaplex metadata found, using dummy data if available");
@@ -137,7 +138,7 @@ async function fetchTokenMetadata(
         address: mintAddress,
         symbol: "UNKNOWN",
         name: "Unknown Token",
-        decimals: 9,
+        decimals: 6,
         icon: "👁",
       };
     }

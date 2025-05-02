@@ -20,6 +20,7 @@ import { Wallet } from "@coral-xyz/anchor";
 import { OffersPage } from "@/pages/all-offers";
 import { OpenOffersPage } from "@/pages/open-offers";
 import AccountOffers from "@/pages/account-offers";
+import MyTokens from "@/pages/my-tokens";
 import { Offer } from "@/types/offer";
 
 import { Toaster } from "sonner";
@@ -40,7 +41,7 @@ const App: React.FC = () => {
     async queryFn() {
       return await request<{ offers: Offer[] | undefined }>(
         config.subgraphUrl,
-        query
+        query,
       );
     },
   });
@@ -58,14 +59,14 @@ const App: React.FC = () => {
 
   const paginatedOffers = data?.offers?.slice(
     (currentPage.orders - 1) * ITEMS_PER_PAGE,
-    currentPage.orders * ITEMS_PER_PAGE
+    currentPage.orders * ITEMS_PER_PAGE,
   );
 
   const paginatedOpenOffers = (data?.offers ?? [])
     .filter((el) => !el.closed)
     ?.slice(
       (currentPage.openOffers - 1) * ITEMS_PER_PAGE,
-      currentPage.openOffers * ITEMS_PER_PAGE
+      currentPage.openOffers * ITEMS_PER_PAGE,
     );
 
   const totalPages = {
@@ -93,7 +94,7 @@ const App: React.FC = () => {
     }
     try {
       const connection = new Connection(
-        clusterApiUrl(WalletAdapterNetwork.Devnet)
+        clusterApiUrl(WalletAdapterNetwork.Devnet),
       );
       if (!wallet || !selectedOffer) return;
 
@@ -102,7 +103,7 @@ const App: React.FC = () => {
         new PublicKey(selectedOffer?.acctMaker),
         new PublicKey(selectedOffer?.acctOffer),
         new PublicKey(selectedOffer?.acctTokenMintA),
-        new PublicKey(selectedOffer?.acctTokenMintB)
+        new PublicKey(selectedOffer?.acctTokenMintB),
       );
     } catch (e) {
       toast.error("Error taking offer");
@@ -136,10 +137,15 @@ const App: React.FC = () => {
           Password: {createPass(walletAddress)}
         </h2>
         <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList
+            className={`grid w-full ${isWalletConnected ? "grid-cols-4" : "grid-cols-3"}`}
+          >
             <TabsTrigger value="orders">All Offers</TabsTrigger>
             <TabsTrigger value="openOffers">Open Offers</TabsTrigger>
             <TabsTrigger value="accountOffers">Account Offers</TabsTrigger>
+            {isWalletConnected && (
+              <TabsTrigger value="myTokens">My Tokens</TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="orders">
@@ -170,6 +176,12 @@ const App: React.FC = () => {
               loading={loading}
             />
           </TabsContent>
+
+          {isWalletConnected && (
+            <TabsContent value="myTokens">
+              <MyTokens />
+            </TabsContent>
+          )}
 
           <TakeOfferDialog
             selectedOffer={selectedOffer}
